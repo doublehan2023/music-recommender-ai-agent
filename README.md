@@ -17,17 +17,45 @@ Replace this paragraph with your own summary of what your version does.
 
 ## How The System Works
 
-Explain your design in plain language.
+**Song features used:**
 
-Some prompts to answer:
+Each `Song` in the catalog carries two kinds of attributes:
 
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
+- Categorical: `genre` (e.g. lofi, pop, rock) and `mood` (e.g. chill, intense, happy)
+- Numerical (all on a 0–1 scale): `energy`, `valence`, `danceability`, `acousticness`, plus `tempo_bpm`
 
-You can include a simple diagram or bullet list if helpful.
+**What the `UserProfile` stores:**
+
+- `favorite_genre` and `favorite_mood` — the category labels the user prefers
+- `target_energy` — the energy level the user wants, as a number between 0 and 1
+- `likes_acoustic` — a true/false flag for whether the user prefers acoustic-sounding songs
+
+**How a score is computed:**
+
+For each song, the `Recommender` calls `score_song`, which adds up weighted signals:
+
+1. **Genre match** (+0.35) — exact match between the song's genre and the user's favorite
+2. **Mood match** (+0.30) — exact match between the song's mood and the user's favorite
+3. **Energy proximity** (up to +0.25) — the closer the song's energy is to the user's `target_energy`, the higher this contribution; songs far from the target score low here regardless of whether they are higher or lower
+4. **Acousticness proximity** (up to +0.10) — same proximity logic; `likes_acoustic=True` sets a target of ~0.8, `False` sets ~0.2
+
+**How songs are chosen:**
+
+Every song in the catalog is scored independently. The `Recommender` then sorts all songs by score (highest first) and returns the top *k* results (default: 5).
+
+**Potential biases:**
+
+- **Catalog imbalance** — genres with more songs in the catalog have a higher chance of appearing in the top-k. For example, lofi and r&b each have two entries while folk and hip-hop have only one. A folk fan will always get the same single match; the remaining slots are filled by whatever scores highest regardless of genre fit.
+
+- **Exact-match penalty** — genre and mood scoring is all-or-nothing. Closely related genres (e.g. `"indie"` vs `"indie pop"`) score zero for a genre match. A user who writes `"indie"` gets no credit for songs tagged `"indie pop"`, even though they are sonically similar. This punishes genre labels that vary in spelling or specificity.
+
+- **Energy dominates numerically** — energy carries the largest numerical weight (0.25) of any single feature. When genre and mood both miss, the system effectively becomes an energy-proximity ranker. Users in underrepresented genres will always see their results skewed toward songs whose energy happens to be closest, regardless of genre or mood fit.
+
+- **`likes_acoustic` forces extremes** — the boolean is converted to a hard target of 0.8 (True) or 0.2 (False). A user indifferent to acousticness, or preferring a mid-range value like 0.5, is silently misrepresented by whichever option they pick.
+
+- **No diversity** — the system always returns the top *k* closest matches. If several songs share a genre and similar energy, the top results can be nearly identical, offering no discovery or variety.
+
+- **Western/English catalog assumption** — all 18 songs reflect Western genre labels (pop, rock, jazz, etc.) and English naming conventions. Users whose taste falls outside these categories have no path to a good recommendation.
 
 ---
 

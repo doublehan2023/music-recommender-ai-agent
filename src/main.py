@@ -9,10 +9,11 @@ You will implement the functions in recommender.py:
 - recommend_songs
 """
 
-from recommender import load_songs, recommend_songs
+from .recommender import load_songs, recommend_songs
 
 
 def main() -> None:
+    """Load songs, run the recommender, and print a formatted results table."""
     songs = load_songs("data/songs.csv") 
 
     # Starter example profile
@@ -20,14 +21,24 @@ def main() -> None:
 
     recommendations = recommend_songs(user_prefs, songs, k=5)
 
-    print("\nTop recommendations:\n")
-    for rec in recommendations:
-        # You decide the structure of each returned item.
-        # A common pattern is: (song, score, explanation)
-        song, score, explanation = rec
-        print(f"{song['title']} - Score: {score:.2f}")
-        print(f"Because: {explanation}")
-        print()
+    width = 52
+    print("\n" + "=" * width)
+    print(" TOP RECOMMENDATIONS")
+    print("=" * width)
+
+    for rank, (song, score, reasons) in enumerate(recommendations, start=1):
+        print(f"\n#{rank}  {song['title']}")
+        print(f"    Artist : {song['artist']}")
+        print(f"    Genre  : {song['genre']}  |  Mood: {song['mood']}")
+        print(f"    Score  : {score:.2f}")
+        print("    " + "-" * (width - 4))
+        if reasons:
+            for reason in reasons:
+                print(f"    • {reason}")
+        else:
+            print("    • No strong matches found")
+
+    print("\n" + "=" * width + "\n")
 
 
 if __name__ == "__main__":
