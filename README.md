@@ -56,6 +56,13 @@ Every song in the catalog is scored independently. The `Recommender` then sorts 
 - **No diversity** — the system always returns the top *k* closest matches. If several songs share a genre and similar energy, the top results can be nearly identical, offering no discovery or variety.
 
 - **Western/English catalog assumption** — all 18 songs reflect Western genre labels (pop, rock, jazz, etc.) and English naming conventions. Users whose taste falls outside these categories have no path to a good recommendation.
+<img width="476" height="577" alt="Screenshot 2026-04-13 at 3 10 26 PM" src="https://github.com/user-attachments/assets/7f56b3d0-6996-44d7-99e3-43f5ed68ec47" />
+<img width="393" height="589" alt="Screenshot 2026-04-13 at 3 10 07 PM" src="https://github.com/user-attachments/assets/3d3a7450-f1e0-4394-a03e-83bebf34f8ec" />
+<img width="431" height="583" alt="Screenshot 2026-04-13 at 3 09 58 PM" src="https://github.com/user-attachments/assets/82702fd7-e5b2-411e-a853-b58f36633324" />
+
+
+
+
 
 ---
 
