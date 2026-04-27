@@ -10,7 +10,10 @@ This project is a rule-based music recommender simulation that suggests songs fr
 
 ![Layout](assets/layout.png)
 
-<video src="assets/presentation.mp4" controls width="100%"></video>
+
+https://github.com/user-attachments/assets/700b2928-b8b7-4ffb-a0fe-f8c6d0f00698
+
+
 
 
 ## Summary
