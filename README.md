@@ -1,4 +1,4 @@
-# Original Project - Music Recommener Stimulation
+# Original Project - Music Recommender Stimulation
 
 ## Project Summary
 
@@ -9,6 +9,9 @@ This project is a rule-based music recommender simulation that suggests songs fr
 # Agentic Music Recommender
 
 ![Layout](assets/layout.png)
+
+<video src="assets/presentation.mp4" controls width="100%"></video>
+
 
 ## Summary
 
