@@ -35,7 +35,7 @@ if "history" not in st.session_state:
 
 
 def extract_tracks(messages: list) -> list:
-    """Pull the last score_and_rank result from the agent message history."""
+    """Pull the last score_and_rank result, preserving score and reasons."""
     for msg in reversed(messages):
         if not isinstance(msg, dict):
             continue
@@ -47,33 +47,57 @@ def extract_tracks(messages: list) -> list:
                 try:
                     data = json.loads(block["content"])
                     if isinstance(data, list) and data and "track" in data[0]:
-                        return [item["track"] for item in data]
+                        return [
+                            {
+                                **item["track"],
+                                "_score": item.get("score"),
+                                "_reasons": item.get("reasons", []),
+                            }
+                            for item in data
+                        ]
                 except (json.JSONDecodeError, KeyError, TypeError):
                     continue
     return []
 
 
-def render_song_card(track: dict):
+RANK_MEDALS = ["1st", "2nd", "3rd", "4th", "5th"]
+
+def render_song_card(track: dict, rank: int = 0):
     track_id = track.get("id", "")
     title = track.get("title", "Unknown")
     artist = track.get("artist", "Unknown")
-    energy = track.get("energy", None)
-    valence = track.get("valence", None)
+    spotify_url = track.get("spotify_url", "")
+    reasons = track.get("_reasons", [])
+    energy = track.get("energy")
+    valence = track.get("valence")
 
-    with st.container(border=True):
-        col1, col2 = st.columns([2, 3])
-        with col1:
-            st.markdown(f"**{title}**")
-            st.markdown(f"*{artist}*")
-            if energy is not None:
+    rank_label = RANK_MEDALS[rank] if rank < len(RANK_MEDALS) else f"#{rank + 1}"
+
+    col, _ = st.columns([3, 2])
+    with col:
+        with st.container(border=True):
+            header_cols = st.columns([1, 6, 2])
+            with header_cols[0]:
+                st.markdown(f"**{rank_label}**")
+            with header_cols[1]:
+                st.markdown(f"**{title}** — *{artist}*")
+            with header_cols[2]:
+                if spotify_url:
+                    st.link_button("Open in Spotify", spotify_url)
+
+            if reasons:
+                for r in reasons:
+                    st.caption(f"• {r}")
+
+            if energy is not None and abs(energy - 0.5) > 0.05:
                 st.progress(energy, text=f"Energy: {energy:.0%}")
-            if valence is not None:
+            if valence is not None and abs(valence - 0.5) > 0.05:
                 st.progress(valence, text=f"Positivity: {valence:.0%}")
-        with col2:
+
             if track_id:
                 st.components.v1.iframe(
                     f"https://open.spotify.com/embed/track/{track_id}?utm_source=generator",
-                    height=80
+                    height=80,
                 )
             else:
                 st.markdown("_(no embed available)_")
@@ -82,11 +106,11 @@ def render_song_card(track: dict):
 # Render chat history
 for turn in st.session_state.chat:
     with st.chat_message(turn["role"]):
-        st.markdown(turn["content"])
-        if turn.get("tracks"):
-            cols = st.columns(1)
-            for track in turn["tracks"]:
-                render_song_card(track)
+        if turn["role"] == "assistant" and turn.get("tracks"):
+            for i, track in enumerate(turn["tracks"]):
+                render_song_card(track, rank=i)
+        else:
+            st.markdown(turn["content"])
 
 # Handle new input
 if prompt := st.chat_input("e.g. something chill for studying, energetic workout music..."):
@@ -105,9 +129,11 @@ if prompt := st.chat_input("e.g. something chill for studying, energetic workout
             st.session_state.history = result["messages"]
             tracks = extract_tracks(result["messages"])
 
-            st.markdown(response_text)
-            for track in tracks:
-                render_song_card(track)
+            if tracks:
+                for i, track in enumerate(tracks):
+                    render_song_card(track, rank=i)
+            else:
+                st.markdown(response_text)
 
             st.session_state.chat.append({
                 "role": "assistant",
