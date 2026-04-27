@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from dotenv import load_dotenv
 import anthropic
@@ -6,6 +7,13 @@ from src.spotify_client import SpotifyClient
 from src.recommender import recommend_songs
 
 load_dotenv()
+
+logging.basicConfig(
+    filename="agent.log",
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+)
+log = logging.getLogger(__name__)
 
 TOOLS = [
     {
@@ -92,8 +100,19 @@ Return exactly 5 recommendations unless the user asks for a different number."""
 
 
 def _execute_tool(name: str, tool_input: dict, spotify: SpotifyClient) -> str:
+    log.info("tool_call name=%s input=%s", name, json.dumps(tool_input))
+    try:
+        result = _run_tool(name, tool_input, spotify)
+        log.info("tool_result name=%s chars=%d", name, len(result))
+        return result
+    except Exception as exc:
+        log.error("tool_error name=%s error=%s", name, exc)
+        return json.dumps({"error": str(exc)})
+
+
+def _run_tool(name: str, tool_input: dict, spotify: SpotifyClient) -> str:
     if name == "search_tracks":
-        tracks = spotify.search_tracks(tool_input["query"], tool_input.get("limit", 20))
+        tracks = spotify.search_tracks(tool_input["query"], tool_input.get("limit", 10))
         return json.dumps(tracks)
 
     if name == "get_audio_features":
@@ -140,6 +159,7 @@ def run_agent(user_message: str, history: list[dict] | None = None) -> dict:
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
     spotify = SpotifyClient()
 
+    log.info("run_agent user_message=%r", user_message)
     messages = list(history or [])
     messages.append({"role": "user", "content": user_message})
 
@@ -159,6 +179,7 @@ def run_agent(user_message: str, history: list[dict] | None = None) -> dict:
             final_text = next(
                 (block.text for block in response.content if block.type == "text"), ""
             )
+            log.info("run_agent complete response_chars=%d", len(final_text))
             return {"response": final_text, "messages": messages}
 
         if response.stop_reason == "tool_use":
