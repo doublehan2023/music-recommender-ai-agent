@@ -8,6 +8,8 @@ This project is a rule-based music recommender simulation that suggests songs fr
 
 # Agentic Music Recommender
 
+![Layout](assets/layout.png)
+
 ## Summary
 
 This project extends the original rule-based simulation into a fully agentic music recommender powered by Claude and the Spotify API. Users describe what they want to listen to in natural language, and a Claude agent iteratively searches Spotify, scores and ranks candidates using audio features, and returns personalized picks with explanations — all through a Streamlit chat interface. Unlike the original fixed pipeline, the agent decides how many searches to run and how to refine its query based on intermediate results, making the recommendation process dynamic and conversational.
