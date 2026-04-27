@@ -7,15 +7,22 @@ load_dotenv()
 
 class SpotifyClient:
     def __init__(self):
+        client_id = os.getenv("SPOTIFY_CLIENT_ID")
+        client_secret = os.getenv("SPOTIFY_CLIENT_SECRET")
+        if not client_id or not client_secret:
+            raise EnvironmentError(
+                "SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET must be set in your .env file."
+            )
         self._sp = spotipy.Spotify(
             auth_manager=SpotifyClientCredentials(
-                client_id=os.getenv("SPOTIFY_CLIENT_ID"),
-                client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
+                client_id=client_id,
+                client_secret=client_secret,
             )
         )
 
-    def search_tracks(self, query: str, limit: int = 20) -> list[dict]:
-        results = self._sp.search(q=query, type="track", limit=limit)
+    def search_tracks(self, query: str, limit: int = 10) -> list[dict]:
+        limit = max(1, min(10, int(limit)))
+        results = self._sp.search(q=query, type="track", limit=limit, market="US")
         tracks = []
         for item in results["tracks"]["items"]:
             tracks.append({
@@ -23,14 +30,18 @@ class SpotifyClient:
                 "title": item["name"],
                 "artist": item["artists"][0]["name"],
                 "spotify_url": item["external_urls"]["spotify"],
-                "preview_url": item["preview_url"],
+                "preview_url": item.get("preview_url"),
             })
         return tracks
 
     def get_audio_features(self, track_ids: list[str]) -> list[dict]:
-        features = self._sp.audio_features(track_ids)
+        # /audio-features was deprecated by Spotify in Nov 2024; return empty on failure
+        try:
+            features = self._sp.audio_features(track_ids)
+        except Exception:
+            return []
         result = []
-        for f in features:
+        for f in (features or []):
             if f is None:
                 continue
             result.append({
